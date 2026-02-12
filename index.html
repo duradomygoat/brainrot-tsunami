@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Escape The Tsunami - Deluxe Edition</title>
+<title>Escape A Tsunami: Brainrot Edition</title>
 <style>
 body { margin:0; overflow:hidden; font-family:Arial; }
 #ui {
@@ -23,17 +23,18 @@ body { margin:0; overflow:hidden; font-family:Arial; }
 <body>
 
 <div id="ui">
-Score: <span id="score">0</span><br>
+Distance: <span id="score">0</span><br>
 Money: 💰 <span id="money">0</span><br>
 Speed: <span id="speed">0</span>
 </div>
-<div id="gameOver">YOU GOT WASHED 🌊</div>
+<div id="gameOver">THE TSUNAMI GOT YOU 🌊</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script>
+// Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
-scene.fog = new THREE.Fog(0x87CEEB, 50, 800);
+scene.fog = new THREE.Fog(0x87CEEB, 50, 1200);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
 const renderer = new THREE.WebGLRenderer({antialias:true});
@@ -44,90 +45,91 @@ document.body.appendChild(renderer.domElement);
 // Lighting
 scene.add(new THREE.AmbientLight(0xffffff,0.6));
 const sun = new THREE.DirectionalLight(0xffffff,1);
-sun.position.set(100,200,100);
+sun.position.set(200,300,100);
 sun.castShadow = true;
 scene.add(sun);
 
-// Ground with grid detail
-const groundGeo = new THREE.PlaneGeometry(5000,5000,50,50);
+// Ground terrain
+const groundGeo = new THREE.PlaneGeometry(1000,5000,100,200);
 const groundMat = new THREE.MeshStandardMaterial({color:0x3cb043});
 const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI/2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// Roblox-style Avatar (simple block humanoid)
+// Roblox-style detailed avatar
 const player = new THREE.Group();
 
-const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(2,3,1.5),
-  new THREE.MeshStandardMaterial({color:0x1565C0})
+function part(w,h,d,color,x,y,z){
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color})
+  );
+  m.position.set(x,y,z);
+  m.castShadow = true;
+  return m;
+}
+
+player.add(
+  part(2,3,1.5,0x1565C0,0,3,0),      // torso
+  part(1.8,1.8,1.8,0xffcc99,0,5,0),  // head
+  part(0.8,2.5,0.8,0xffcc99,-1.5,3,0), // left arm
+  part(0.8,2.5,0.8,0xffcc99,1.5,3,0),  // right arm
+  part(0.9,2.5,0.9,0x222222,-0.6,1.2,0), // left leg
+  part(0.9,2.5,0.9,0x222222,0.6,1.2,0)   // right leg
 );
-torso.position.y = 3;
-torso.castShadow = true;
-
-const head = new THREE.Mesh(
-  new THREE.BoxGeometry(1.8,1.8,1.8),
-  new THREE.MeshStandardMaterial({color:0xffcc99})
-);
-head.position.y = 5;
-head.castShadow = true;
-
-const leftArm = new THREE.Mesh(
-  new THREE.BoxGeometry(0.8,2.5,0.8),
-  new THREE.MeshStandardMaterial({color:0xffcc99})
-);
-leftArm.position.set(-1.5,3,0);
-
-const rightArm = leftArm.clone();
-rightArm.position.x = 1.5;
-
-const leftLeg = new THREE.Mesh(
-  new THREE.BoxGeometry(0.9,2.5,0.9),
-  new THREE.MeshStandardMaterial({color:0x222222})
-);
-leftLeg.position.set(-0.6,1.25,0);
-
-const rightLeg = leftLeg.clone();
-rightLeg.position.x = 0.6;
-
-player.add(torso, head, leftArm, rightArm, leftLeg, rightLeg);
 scene.add(player);
 
-// Detailed Brainrot Towers
-const obstacles = [];
-function spawnTower(z){
-  const group = new THREE.Group();
-  const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(2,3,6,16),
+// Procedural obstacle course
+const obstacles=[];
+function createBuilding(x,z){
+  const height = 5 + Math.random()*15;
+  const building = new THREE.Mesh(
+    new THREE.BoxGeometry(6,height,6),
     new THREE.MeshStandardMaterial({color:0x888888})
   );
-  base.position.y = 3;
-  const top = new THREE.Mesh(
-    new THREE.ConeGeometry(2.5,3,16),
-    new THREE.MeshStandardMaterial({color:0x9900ff})
-  );
-  top.position.y = 7;
-  group.add(base,top);
-  group.position.set((Math.random()-0.5)*200,0,z);
-  scene.add(group);
-  obstacles.push(group);
+  building.position.set(x,height/2,z);
+  building.castShadow=true;
+  scene.add(building);
+  obstacles.push(building);
 }
-for(let i=0;i<100;i++) spawnTower(-i*80-200);
 
-// Animated Water Wall
-const waveGeo = new THREE.PlaneGeometry(5000,200,100,50);
-const waveMat = new THREE.MeshStandardMaterial({color:0x1e90ff, side:THREE.DoubleSide});
-const wave = new THREE.Mesh(waveGeo, waveMat);
+for(let i=0;i<200;i++){
+  const x = (Math.random()-0.5)*200;
+  const z = -i*40 - 100;
+  createBuilding(x,z);
+}
+
+// Collectible brainrots
+const collectibles=[];
+function spawnBrainrot(x,z){
+  const mesh = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1,0.4,64,16),
+    new THREE.MeshStandardMaterial({color:0x9900ff, emissive:0x5500aa})
+  );
+  mesh.position.set(x,3,z);
+  scene.add(mesh);
+  collectibles.push(mesh);
+}
+
+for(let i=0;i<150;i++){
+  spawnBrainrot((Math.random()-0.5)*150,-i*60-200);
+}
+
+// Detailed wave wall
+const waveGeo = new THREE.PlaneGeometry(1000,200,200,50);
+const waveMat = new THREE.MeshStandardMaterial({color:0x1e90ff, transparent:true, opacity:0.9, side:THREE.DoubleSide});
+const wave = new THREE.Mesh(waveGeo,waveMat);
 wave.position.set(0,100,-300);
 scene.add(wave);
 
 camera.position.set(0,10,20);
 
-let score=0, money=0;
-let baseSpeed=0.3;
-let velocityY=0, onGround=true;
+let speed=0.4;
+let velocityY=0,onGround=true;
+let score=0,money=0;
 let gameOver=false;
+let spawnPoint = new THREE.Vector3(0,0,0);
 
 const keys={};
 document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
@@ -137,45 +139,70 @@ function animate(){
  if(gameOver) return;
  requestAnimationFrame(animate);
 
- baseSpeed+=0.00005;
- const speed=baseSpeed*(keys['shift']?2:1);
+ speed+=0.00005;
+ const moveSpeed=speed*(keys['shift']?2:1);
 
- if(keys['w']) player.position.z-=speed;
- if(keys['s']) player.position.z+=speed;
- if(keys['a']) player.position.x-=speed;
- if(keys['d']) player.position.x+=speed;
+ if(keys['w']) player.position.z-=moveSpeed;
+ if(keys['s']) player.position.z+=moveSpeed;
+ if(keys['a']) player.position.x-=moveSpeed;
+ if(keys['d']) player.position.x+=moveSpeed;
 
- if(keys[' ']&&onGround){ velocityY=0.8; onGround=false; }
- velocityY-=0.04;
+ if(keys[' ']&&onGround){ velocityY=0.9; onGround=false; }
+ velocityY-=0.05;
  player.position.y+=velocityY;
  if(player.position.y<=0){ player.position.y=0; velocityY=0; onGround=true; }
 
- // Animate wave vertices
+ // Animate wave
  const pos = wave.geometry.attributes.position;
  for(let i=0;i<pos.count;i++){
-   const y = Math.sin(i*0.3 + Date.now()*0.005)*5;
-   pos.setZ(i,y);
+  const y = Math.sin(i*0.15 + Date.now()*0.004)*8;
+  pos.setZ(i,y);
  }
  pos.needsUpdate=true;
+ wave.position.z+=speed*0.9;
 
- wave.position.z+=baseSpeed*0.8;
+ // Collision detection
+ obstacles.forEach(o=>{
+  if(player.position.distanceTo(o.position)<4){
+    player.position.z+=5;
+  }
+ });
+
+ collectibles.forEach(c=>{
+  c.rotation.y+=0.05;
+  if(c.visible && player.position.distanceTo(c.position)<3){
+    c.visible=false;
+    money+=10;
+  }
+ });
 
  camera.position.x=player.position.x;
  camera.position.z=player.position.z+20;
  camera.lookAt(player.position);
 
  if(wave.position.z+50>player.position.z){
-   document.getElementById('gameOver').style.display='block';
-   gameOver=true;
- }
+  document.getElementById('gameOver').style.display='block';
+  gameOver=true;
+  setTimeout(respawn,2000);
+}
 
  score++;
  document.getElementById('score').innerText=score;
  document.getElementById('money').innerText=money;
- document.getElementById('speed').innerText=speed.toFixed(2);
+ document.getElementById('speed').innerText=moveSpeed.toFixed(2);
 
  renderer.render(scene,camera);
 }
+function respawn(){
+  player.position.copy(spawnPoint);
+  wave.position.set(0,100,player.position.z-300);
+  velocityY=0;
+  speed=0.4;
+  gameOver=false;
+  document.getElementById('gameOver').style.display='none';
+  animate();
+}
+
 animate();
 
 window.addEventListener('resize',()=>{
